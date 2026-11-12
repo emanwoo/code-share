@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<title>수업 코드 공유</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #1d2330;
+    --muted: #5b6475;
+    --line: #dde1e8;
+    --accent: #2457d6;
+    --accent-text: #ffffff;
+    --tab-bg: #e9edf3;
+    --code-bg: #fbfcfd;
+    --gutter: #9aa3b2;
+    --ok: #1a8a4a;
+    --ok-text: #ffffff;
+    --tk-keyword: #b5179e;
+    --tk-string: #2a7d2e;
+    --tk-number: #c25e00;
+    --tk-comment: #7b8494;
+    --tk-title: #2457d6;
+    --tk-builtin: #0b7a8f;
+    --fs: 22px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #14171d; --panel: #1c2028; --text: #e6e9ef; --muted: #a0a8b8; --line: #2e3440;
+      --accent: #5b8cff; --accent-text: #0d1117; --tab-bg: #252a34; --code-bg: #161a21;
+      --gutter: #5d6575; --ok: #4cc77f; --ok-text: #0d1117;
+      --tk-keyword: #ff7ad9; --tk-string: #8fd18f; --tk-number: #ffb067; --tk-comment: #7d8697;
+      --tk-title: #82aaff; --tk-builtin: #5fd3e6;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ok-text: #0d1117;
+    --bg: #14171d;
+    --panel: #1c2028;
+    --text: #e6e9ef;
+    --muted: #a0a8b8;
+    --line: #2e3440;
+    --accent: #5b8cff;
+    --accent-text: #0d1117;
+    --tab-bg: #252a34;
+    --code-bg: #161a21;
+    --gutter: #5d6575;
+    --ok: #4cc77f;
+    --tk-keyword: #ff7ad9;
+    --tk-string: #8fd18f;
+    --tk-number: #ffb067;
+    --tk-comment: #7d8697;
+    --tk-title: #82aaff;
+    --tk-builtin: #5fd3e6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  /* ---------- 상단 바 ---------- */
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; z-index: 10;
+    height: env(safe-area-inset-top, 0px); background: var(--panel);
+  }
+  header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar, nav.tabs, main, .stepper {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding-block: 10px;
+  }
+  .topbar h1 { font-size: 20px; margin: 0; flex: 1 1 auto; }
+  .tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  button {
+    font: inherit; cursor: pointer;
+    border: 1px solid var(--line); background: var(--tab-bg); color: var(--text);
+    border-radius: 8px; padding: 6px 12px;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .size-label { min-width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
+  /* ---------- 탭 ---------- */
+  nav.tabs {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding-block: 0 10px;
+    scrollbar-width: thin;
+  }
+  nav.tabs button {
+    white-space: nowrap; font-size: 17px; padding: 8px 16px;
+  }
+  nav.tabs button[aria-selected="true"] {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 700;
+  }
+  /* ---------- 본문 ---------- */
+  main { max-width: 1400px; margin: 0 auto; padding-block: 20px 120px; }
+  .panel { min-width: 0; }
+  .panel h2 { font-size: calc(var(--fs) * 1.25); margin: 0 0 12px; }
+  .panel .desc, .panel p, .panel li { font-size: calc(var(--fs) * 0.85); }
+  .panel p { margin: 0 0 14px; }
+  .panel code.inline {
+    font-family: Consolas, "D2Coding", "Courier New", monospace;
+    background: var(--tab-bg); padding: 1px 6px; border-radius: 4px;
+  }
+  .code-card {
+    background: var(--code-bg);
+    border: 1px solid var(--line); border-radius: 12px;
+    margin: 18px 0 26px; overflow: hidden;
+  }
+  .code-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .code-name { color: var(--muted); font-size: 16px; font-family: Consolas, monospace; }
+  .copy-btn {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+    font-weight: 700; font-size: 18px; padding: 8px 20px;
+  }
+  .copy-btn.done { background: var(--ok); border-color: var(--ok); color: var(--ok-text); }
+  .code-body { display: flex; }
+  .gutter, .code-body pre {
+    margin: 0; padding: 14px 0;
+    font-family: Consolas, "D2Coding", "Cascadia Code", "Courier New", monospace;
+    font-size: var(--fs); line-height: 1.5;
+    white-space: pre; tab-size: 4;
+  }
+  .gutter {
+    color: var(--gutter); text-align: right;
+    padding-left: 14px; padding-right: 14px;
+    border-right: 1px solid var(--line);
+    user-select: none; -webkit-user-select: none;
+  }
+  .code-body pre { flex: 1; overflow-x: auto; padding-left: 16px; padding-right: 16px; }
+  .code-body pre code { font: inherit; background: none; padding: 0; }
+  /* 코드 색상 */
+  .hljs-keyword, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--tk-keyword); }
+  .hljs-string, .hljs-regexp { color: var(--tk-string); }
+  .hljs-number { color: var(--tk-number); }
+  .hljs-comment { color: var(--tk-comment); font-style: italic; }
+  .hljs-title, .hljs-function .hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--tk-title); }
+  .hljs-built_in, .hljs-type { color: var(--tk-builtin); }
+  .hljs-subst { color: var(--text); }
+  /* ---------- 하단 이전/다음 ---------- */
+  .stepper {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between; gap: 12px;
+    padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--panel); border-top: 1px solid var(--line);
+  }
+  .stepper button { font-size: 18px; padding: 10px 18px; max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stepper button[disabled] { opacity: .35; cursor: default; }
+  /* ---------- QR 창 ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 50; display: none;
+    background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal.open { display: flex; }
+  .modal-box {
+    background: #fff; color: #111; border-radius: 16px; padding: 24px; text-align: center; max-width: 100%;
+  }
+  #qr { display: inline-block; padding: 12px; background: #fff; }
+  #qr img, #qr canvas { max-width: 70vmin; height: auto; }
+  .url-text { font-size: 22px; word-break: break-all; margin: 12px 0; font-family: Consolas, monospace; }
+  .toast {
+    position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%);
+    background: var(--ok); color: var(--ok-text); padding: 10px 22px; border-radius: 999px;
+    font-size: 18px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .topbar h1 { font-size: 17px; width: 100%; }
+    .copy-btn { font-size: 16px; padding: 6px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!--
+  ================================================================
+  ✏️ 선생님용 편집 안내
+  ----------------------------------------------------------------
+  1) 아래 <div id="lessons"> 안의 <section> 하나가 탭 하나입니다.
+     - data-title="..." 에 탭 이름을 적습니다.
+  2) 설명은 <p>...</p> 로 자유롭게 적습니다.
+  3) 코드는 아래 형식으로 넣습니다. (한 탭에 여러 개 가능)
+       <script type="text/x-code" data-lang="python" data-name="파일이름.py">
+       ...코드...
+       </script>
+     - 코드 안의 < > & 기호도 그대로 써도 됩니다 (변환 불필요).
+     - 블록 전체가 들여쓰기 되어 있어도 공통 들여쓰기는 자동으로 제거됩니다.
+       → 학생이 복사하면 첫 줄부터 정확한 들여쓰기로 붙여넣어집니다.
+     - data-lang: python, c, java, javascript, html 등 (생략 시 python)
+  4) 제목은 아래 COURSE_TITLE 을 바꾸세요.
+  ================================================================
+-->
+<div id="lessons" hidden>
+
+  <section data-title="1. 출력과 변수">
+    <p>코드를 <b>복사하기</b> 버튼으로 복사한 뒤, 내 편집기에 붙여넣고 실행해 보세요.</p>
+    <script type="text/x-code" data-lang="python" data-name="hello.py">
+    name = "홍길동"
+    age = 17
+    print("안녕하세요!", name, "입니다.")
+    print(f"나이는 {age}살 입니다.")
+    </script>
+  </section>
+
+  <section data-title="2. 입력과 조건문">
+    <p>점수를 입력받아 학점을 출력합니다. 들여쓰기(4칸)를 잘 살펴보세요.</p>
+    <script type="text/x-code" data-lang="python" data-name="grade.py">
+    score = int(input("점수를 입력하세요: "))
+
+    if score >= 90:
+        grade = "A"
+    elif score >= 80:
+        grade = "B"
+    elif score >= 70:
+        grade = "C"
+    else:
+        grade = "F"
+
+    print("학점:", grade)
+    </script>
+  </section>
+
+  <section data-title="3. 반복문">
+    <p>먼저 구구단 한 단을 출력해 봅시다.</p>
+    <script type="text/x-code" data-lang="python" data-name="loop1.py">
+    dan = 3
+    for i in range(1, 10):
+        print(f"{dan} x {i} = {dan * i}")
+    </script>
+    <p>이번에는 중첩 반복문으로 2단부터 9단까지 출력합니다.</p>
+    <script type="text/x-code" data-lang="python" data-name="loop2.py">
+    for dan in range(2, 10):
+        print(f"--- {dan}단 ---")
+        for i in range(1, 10):
+            if i % 2 == 0:
+                continue  # 짝수 줄은 건너뛰기
+            print(f"{dan} x {i} = {dan * i}")
+    </script>
+  </section>
+
+  <section data-title="4. 함수">
+    <p>리스트의 평균을 구하는 함수를 만들어 봅시다.</p>
+    <script type="text/x-code" data-lang="python" data-name="func.py">
+    def average(numbers):
+        """리스트의 평균을 돌려줍니다."""
+        if len(numbers) == 0:
+            return 0
+        total = 0
+        for n in numbers:
+            total += n
+        return total / len(numbers)
+
+
+    scores = [85, 92, 78, 64, 99]
+    print("평균:", average(scores))
+    print("최고점:", max(scores), "/ 최저점:", min(scores))
+    </script>
+  </section>
+
+</div>
+
+<header>
+  <div class="topbar">
+    <h1 id="courseTitle">정보 수업 코드</h1>
+    <div class="tools">
+      <button id="sizeDown" title="글자 작게 ( - 키 )">가−</button>
+      <button id="sizeReset" class="size-label" title="클릭하면 기본 크기로">22px</button>
+      <button id="sizeUp" title="글자 크게 ( + 키 )">가+</button>
+      <button id="themeBtn" title="밝은/어두운 화면">🌓</button>
+      <button id="qrBtn" title="접속 QR 코드 보기">QR</button>
+      <button id="fullBtn" title="전체 화면">⛶</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="수업 단계"></nav>
+</header>
+
+<main id="main"></main>
+
+<div class="stepper">
+  <button id="prevBtn">← 이전</button>
+  <button id="nextBtn">다음 →</button>
+</div>
+
+<div class="modal" id="qrModal" role="dialog" aria-label="접속 QR 코드">
+  <div class="modal-box">
+    <div id="qr"></div>
+    <div class="url-text" id="qrUrl"></div>
+    <button id="qrClose">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">복사되었습니다! 붙여넣기 하세요 (Ctrl+V)</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const COURSE_TITLE = "정보 수업 코드";   // ← 수업 제목
+  const DEFAULT_SIZE = 22;                  // 기본 글자 크기(px)
+  const MIN_SIZE = 14, MAX_SIZE = 48;
+  // 학생 접속 주소(QR 코드)는 배포된 웹 앱 주소를 자동으로 가져옵니다.
+  const GS = (window.google && google.script) ? google.script : null;
+  let shareUrl = "";
+  if (GS && GS.run) {
+    GS.run.withSuccessHandler(u => { if (u) shareUrl = u; }).getUrl();
+  }
+
+  // ---------- 저장(실패해도 동작) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  // ---------- 공통 들여쓰기 제거 ----------
+  function dedent(text) {
+    let lines = text.replace(/\r\n?/g, "\n").split("\n");
+    while (lines.length && lines[0].trim() === "") lines.shift();
+    while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
+    let min = Infinity;
+    for (const l of lines) {
+      if (l.trim() === "") continue;
+      min = Math.min(min, l.match(/^[ \t]*/)[0].length);
+    }
+    if (min === Infinity) min = 0;
+    return lines.map(l => (l.trim() === "" ? "" : l.slice(min).replace(/\s+$/, ""))).join("\n");
+  }
+
+  // ---------- 복사 ----------
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (_) {}
+      ta.remove();
+      return ok;
+    }
+  }
+
+  const toast = document.getElementById("toast");
+  let toastTimer;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+  }
+
+  // ---------- 코드 카드 만들기 ----------
+  function makeCodeCard(scriptEl) {
+    const code = dedent(scriptEl.textContent);
+    const lang = scriptEl.dataset.lang || "python";
+    const name = scriptEl.dataset.name || lang;
+
+    const card = document.createElement("div");
+    card.className = "code-card";
+
+    const head = document.createElement("div");
+    head.className = "code-head";
+    const label = document.createElement("span");
+    label.className = "code-name";
+    label.textContent = name;
+    const btn = document.createElement("button");
+    btn.className = "copy-btn";
+    btn.textContent = "📋 복사하기";
+    btn.addEventListener("click", async () => {
+      const ok = await copyText(code);
+      if (ok) {
+        btn.textContent = "✓ 복사됨";
+        btn.classList.add("done");
+        showToast("복사되었습니다! 붙여넣기 하세요 (Ctrl+V)");
+        setTimeout(() => { btn.textContent = "📋 복사하기"; btn.classList.remove("done"); }, 2000);
+      } else {
+        showToast("복사 실패 — 코드를 드래그해서 복사하세요");
+      }
+    });
+    head.append(label, btn);
+
+    const body = document.createElement("div");
+    body.className = "code-body";
+    const gutter = document.createElement("div");
+    gutter.className = "gutter";
+    gutter.setAttribute("aria-hidden", "true");
+    gutter.textContent = code.split("\n").map((_, i) => i + 1).join("\n");
+    const pre = document.createElement("pre");
+    const codeEl = document.createElement("code");
+    codeEl.className = "language-" + lang;
+    codeEl.textContent = code;
+    pre.appendChild(codeEl);
+    body.append(gutter, pre);
+
+    if (window.hljs) {
+      try { hljs.highlightElement(codeEl); } catch (e) {}
+    }
+
+    card.append(head, body);
+    return card;
+  }
+
+  // ---------- 탭 구성 ----------
+  document.title = COURSE_TITLE;
+  document.getElementById("courseTitle").textContent = COURSE_TITLE;
+
+  const tabsEl = document.getElementById("tabs");
+  const mainEl = document.getElementById("main");
+  const sections = [...document.querySelectorAll("#lessons > section")];
+  const tabs = [], panels = [];
+
+  sections.forEach((sec, i) => {
+    const title = sec.dataset.title || `${i + 1}단계`;
+
+    const tab = document.createElement("button");
+    tab.setAttribute("role", "tab");
+    tab.id = "tab-" + i;
+    tab.textContent = title;
+    tab.addEventListener("click", () => show(i));
+    tabsEl.appendChild(tab);
+    tabs.push(tab);
+
+    const panel = document.createElement("section");
+    panel.className = "panel";
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", tab.id);
+    const h2 = document.createElement("h2");
+    h2.textContent = title;
+    panel.appendChild(h2);
+    while (sec.firstChild) panel.appendChild(sec.firstChild);
+    panel.querySelectorAll('script[type="text/x-code"]').forEach(s => s.replaceWith(makeCodeCard(s)));
+    panel.hidden = true;
+    mainEl.appendChild(panel);
+    panels.push(panel);
+  });
+  document.getElementById("lessons").remove();
+
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  let current = 0;
+
+  function show(i, fromHash) {
+    if (!panels.length) return;
+    i = Math.max(0, Math.min(panels.length - 1, i));
+    current = i;
+    panels.forEach((p, k) => (p.hidden = k !== i));
+    tabs.forEach((t, k) => t.setAttribute("aria-selected", String(k === i)));
+    tabs[i].scrollIntoView({ block: "nearest", inline: "nearest" });
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === panels.length - 1;
+    prevBtn.textContent = i > 0 ? "← " + tabs[i - 1].textContent : "← 이전";
+    nextBtn.textContent = i < panels.length - 1 ? tabs[i + 1].textContent + " →" : "다음 →";
+    if (!fromHash) {
+      // 주소창 끝에 #번호 를 붙여 둡니다 (예: .../exec#3 → 3번 탭)
+      try {
+        if (GS && GS.history) GS.history.replace(null, null, String(i + 1));
+        else history.replaceState(null, "", "#" + (i + 1));
+      } catch (e) {}
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function indexFrom(hash) {
+    const n = parseInt(String(hash || "").replace("#", ""), 10);
+    return Number.isFinite(n) ? n - 1 : 0;
+  }
+  if (GS && GS.history) {
+    try { GS.history.setChangeHandler(e => show(indexFrom(e.location && e.location.hash), true)); } catch (e) {}
+  } else {
+    window.addEventListener("hashchange", () => show(indexFrom(location.hash), true));
+  }
+  prevBtn.addEventListener("click", () => show(current - 1));
+  nextBtn.addEventListener("click", () => show(current + 1));
+
+  // ---------- 글자 크기 ----------
+  const sizeLabel = document.getElementById("sizeReset");
+  let size = parseInt(store.get("codeShare.size", DEFAULT_SIZE), 10) || DEFAULT_SIZE;
+  function setSize(s) {
+    size = Math.max(MIN_SIZE, Math.min(MAX_SIZE, s));
+    document.documentElement.style.setProperty("--fs", size + "px");
+    sizeLabel.textContent = size + "px";
+    store.set("codeShare.size", size);
+  }
+  document.getElementById("sizeUp").addEventListener("click", () => setSize(size + 2));
+  document.getElementById("sizeDown").addEventListener("click", () => setSize(size - 2));
+  sizeLabel.addEventListener("click", () => setSize(DEFAULT_SIZE));
+
+  // ---------- 테마 ----------
+  function setTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    store.set("codeShare.theme", t);
+  }
+  const savedTheme = store.get("codeShare.theme", "");
+  if (savedTheme) setTheme(savedTheme);
+  function isDark() {
+    const t = document.documentElement.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  document.getElementById("themeBtn").addEventListener("click", () => setTheme(isDark() ? "light" : "dark"));
+
+  // ---------- 전체 화면 ----------
+  document.getElementById("fullBtn").addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => showToast("이 화면에서는 전체 화면을 쓸 수 없습니다"));
+  });
+
+  // ---------- QR ----------
+  const qrModal = document.getElementById("qrModal");
+  document.getElementById("qrBtn").addEventListener("click", () => {
+    const url = shareUrl || (GS ? "" : location.href.split("#")[0]);
+    const box = document.getElementById("qr");
+    box.innerHTML = "";
+    document.getElementById("qrUrl").textContent = url || "주소를 불러오는 중입니다. 잠시 후 다시 눌러 주세요.";
+    if (url && window.QRCode) {
+      try { new QRCode(box, { text: url, width: 360, height: 360 }); } catch (e) {}
+    }
+    qrModal.classList.add("open");
+  });
+  document.getElementById("qrClose").addEventListener("click", () => qrModal.classList.remove("open"));
+  qrModal.addEventListener("click", e => { if (e.target === qrModal) qrModal.classList.remove("open"); });
+
+  // ---------- 키보드 ----------
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    if (e.key === "ArrowRight") show(current + 1);
+    else if (e.key === "ArrowLeft") show(current - 1);
+    else if (e.key === "+" || e.key === "=") setSize(size + 2);
+    else if (e.key === "-") setSize(size - 2);
+    else if (e.key === "Escape") qrModal.classList.remove("open");
+  });
+
+  setSize(size);
+  if (GS && GS.url) {
+    show(0, true);
+    try { GS.url.getLocation(loc => show(indexFrom(loc && loc.hash), true)); } catch (e) {}
+  } else {
+    show(indexFrom(location.hash));
+  }
+</script>
+</body>
+</html>
