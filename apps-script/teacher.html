@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<title>교사용 · 수업 코드 공유</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #5b6475; --line: #dde1e8;
+    --accent: #2457d6; --accent-text: #ffffff; --soft: #e9edf3; --code-bg: #fbfcfd;
+    --ok: #1a8a4a; --ok-soft: #e3f4ea; --warn: #b54708; --danger: #c0262d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #14171d; --panel: #1c2028; --text: #e6e9ef; --muted: #a0a8b8; --line: #2e3440;
+      --accent: #5b8cff; --accent-text: #0d1117; --soft: #252a34; --code-bg: #161a21;
+      --ok: #4cc77f; --ok-soft: #173325; --warn: #f5a35c; --danger: #ff6b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text); line-height: 1.5; font-size: 15px;
+    font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button {
+    cursor: pointer; border: 1px solid var(--line); background: var(--soft);
+    border-radius: 8px; padding: 6px 12px; white-space: nowrap;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 1px;
+  }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 700; }
+  button.danger { color: var(--danger); }
+  button[disabled] { opacity: .45; cursor: default; }
+  input[type=text], input[type=password], select, textarea {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%;
+  }
+  label.field { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 4px; font-weight: 600; }
+
+  /* ---------- 로그인 ---------- */
+  #login {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .login-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px 24px; width: 100%; max-width: 380px;
+  }
+  .login-box h1 { font-size: 20px; margin: 0 0 6px; }
+  .login-box p { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+  .login-box form { display: flex; gap: 8px; }
+  .msg { margin-top: 12px; font-size: 14px; color: var(--danger); min-height: 1.5em; white-space: pre-line; }
+
+  /* ---------- 상단 ---------- */
+  header {
+    position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px;
+  }
+  .badge { font-size: 12px; font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: 6px; padding: 2px 8px; }
+  #courseTitle { flex: 1 1 220px; max-width: 360px; font-weight: 700; font-size: 17px; }
+  .status { font-size: 13px; color: var(--muted); min-width: 110px; }
+  .status.dirty { color: var(--warn); }
+  .status.err { color: var(--danger); font-weight: 700; }
+  .head-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+  /* ---------- 본문 ---------- */
+  .layout {
+    display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px;
+    max-width: 1400px; margin: 0 auto; padding: 16px;
+  }
+  aside {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px;
+    align-self: start; position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow: auto;
+  }
+  .summary { font-size: 13px; color: var(--muted); padding: 4px 8px 8px; }
+  .tab-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    border: 1px solid transparent; background: none; padding: 7px 8px; margin: 1px 0;
+  }
+  .tab-item:hover { background: var(--soft); border-color: transparent; }
+  .tab-item.sel { background: var(--soft); border-color: var(--accent); }
+  .tab-item .num { color: var(--muted); font-variant-numeric: tabular-nums; width: 22px; text-align: right; flex: none; font-size: 13px; }
+  .tab-item .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab-item .t.emptytab { color: var(--muted); }
+  .pill { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; flex: none; }
+  .pill.on { background: var(--ok-soft); color: var(--ok); }
+  .pill.off { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+  .add-tab { width: 100%; margin-top: 6px; }
+
+  .editor {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px 24px; min-width: 0;
+  }
+  .pub-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pub-btn { font-size: 16px; font-weight: 700; padding: 10px 16px; }
+  .pub-btn.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .pub-note { font-size: 13px; color: var(--muted); }
+  textarea.desc { min-height: 70px; resize: vertical; }
+  .code-block { border: 1px solid var(--line); border-radius: 10px; margin-top: 14px; overflow: hidden; background: var(--code-bg); }
+  .code-top { display: flex; gap: 8px; padding: 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .code-top input { flex: 1 1 160px; width: auto; }
+  .code-top select { flex: 0 0 140px; width: auto; }
+  textarea.code {
+    display: block; border: 0; border-radius: 0; background: var(--code-bg);
+    font-family: Consolas, "D2Coding", "Cascadia Code", "Courier New", monospace; font-size: 15px; line-height: 1.5;
+    min-height: 220px; resize: vertical; white-space: pre; overflow: auto; tab-size: 4; padding: 12px 14px;
+  }
+  .row-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .tab-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .tip { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* ---------- 창 ---------- */
+  .modal { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(0,0,0,.5); align-items: center; justify-content: center; padding: 16px; }
+  .modal.open { display: flex; }
+  .modal-box { background: var(--panel); border-radius: 14px; padding: 20px; width: 100%; max-width: 640px; max-height: 90vh; overflow: auto; }
+  .modal-box h2 { margin: 0 0 8px; font-size: 18px; }
+  .modal-box p { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+  .modal-box textarea { min-height: 220px; font-family: Consolas, monospace; font-size: 12px; }
+  .modal-box .row-btns { justify-content: flex-end; }
+  .modal-box hr { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+    background: #1d2330; color: #fff; padding: 10px 20px; border-radius: 999px; font-weight: 700;
+    opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; max-height: 260px; }
+    .head-tools { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>교사용 화면</h1>
+    <p id="loginInfo">교사 확인 중입니다…</p>
+    <form id="loginForm" hidden>
+      <input type="password" id="pw" placeholder="교사 비밀번호" autocomplete="current-password">
+      <button class="primary" type="submit">들어가기</button>
+    </form>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <span class="badge">교사용</span>
+    <input type="text" id="courseTitle" aria-label="수업 제목" maxlength="60">
+    <span class="status" id="status">저장됨 ✓</span>
+    <div class="head-tools">
+      <button class="primary" id="nextPubBtn" title="아직 숨겨진 다음 탭을 학생에게 공개합니다">▶ 다음 탭 공개</button>
+      <button id="saveBtn" title="Ctrl+S">💾 저장</button>
+      <button id="studentBtn">👀 학생 화면</button>
+      <button id="moreBtn">⚙️ 관리</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="summary" id="summary"></div>
+      <div id="tabList"></div>
+      <button class="add-tab" id="addTabBtn">＋ 탭 추가</button>
+    </aside>
+
+    <section class="editor" id="editor">
+      <div class="pub-row">
+        <button class="pub-btn" id="pubBtn"></button>
+        <span class="pub-note" id="pubNote"></span>
+      </div>
+
+      <label class="field" for="tabTitle">탭 제목</label>
+      <input type="text" id="tabTitle" maxlength="80" placeholder="예: 5. 리스트">
+
+      <label class="field" for="tabDesc">설명 (학생 화면에 코드 위에 보입니다)</label>
+      <textarea class="desc" id="tabDesc" maxlength="5000" placeholder="예: 리스트를 만들고 값을 꺼내 봅시다."></textarea>
+
+      <label class="field">코드</label>
+      <div class="tip">코드를 그대로 붙여넣으세요. 들여쓰기가 그대로 유지됩니다. Tab 키 = 4칸 들여쓰기, Shift+Tab = 내어쓰기</div>
+      <div id="codes"></div>
+      <div class="row-btns">
+        <button id="addCodeBtn">＋ 코드 블록 추가</button>
+      </div>
+
+      <div class="tab-actions">
+        <button id="upBtn">↑ 위로</button>
+        <button id="downBtn">↓ 아래로</button>
+        <button id="insertBtn">＋ 이 탭 뒤에 새 탭</button>
+        <button class="danger" id="delBtn">🗑 이 탭 삭제</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="moreModal" role="dialog" aria-label="관리">
+  <div class="modal-box">
+    <h2>다음 반 수업 준비</h2>
+    <p>모든 탭을 숨깁니다. 코드는 지워지지 않으니, 다음 반 수업에서 다시 하나씩 공개하면 됩니다.</p>
+    <div class="row-btns" style="justify-content:flex-start">
+      <button id="hideAllBtn">🔒 모든 탭 숨기기</button>
+      <button id="showAllBtn">🔓 모든 탭 공개</button>
+    </div>
+    <hr>
+    <h2>백업 / 복원</h2>
+    <p>아래 글자를 복사해 메모장 등에 보관해 두면, 나중에 붙여넣고 [복원]을 눌러 그대로 되살릴 수 있습니다.</p>
+    <textarea id="backupText" spellcheck="false"></textarea>
+    <div class="row-btns">
+      <button id="copyBackupBtn">📋 복사</button>
+      <button class="danger" id="restoreBtn">이 내용으로 복원</button>
+      <button id="moreClose">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const APP_URL = <?= appUrl ?>;
+  const LANGS = [
+    ["python", "Python"], ["c", "C"], ["cpp", "C++"], ["java", "Java"], ["javascript", "JavaScript"],
+    ["html", "HTML"], ["css", "CSS"], ["sql", "SQL"], ["plaintext", "일반 텍스트"]
+  ];
+  const MAX_TABS = 40;
+  const AUTOSAVE_MS = 2000;
+
+  const $ = id => document.getElementById(id);
+  const GS = (window.google && google.script) ? google.script : null;
+  function call(fn, ...args) {
+    return new Promise((resolve, reject) => {
+      if (!GS || !GS.run) return reject(new Error("Apps Script 웹 앱 주소에서 열어 주세요."));
+      GS.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args);
+    });
+  }
+  const session = {
+    get() { try { return sessionStorage.getItem("codeShare.pw") || ""; } catch (e) { return ""; } },
+    set(v) { try { sessionStorage.setItem("codeShare.pw", v); } catch (e) {} }
+  };
+
+  let toastTimer;
+  function toast(msg, ms) {
+    const t = $("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2200);
+  }
+
+  // ================= 로그인 =================
+  let password = "";
+  let doc = null, version = "", studentUrl = APP_URL;
+  let sel = 0;
+
+  async function tryLoad(pw) {
+    const res = await call("teacherLoad", pw);
+    password = pw;
+    if (pw) session.set(pw);
+    doc = res.doc; version = res.doc.version || "";
+    studentUrl = res.studentUrl || APP_URL;
+    $("login").hidden = true;
+    $("app").hidden = false;
+    sel = Math.max(0, lastPublishedIndex());
+    renderAll();
+  }
+
+  function showLoginForm(info, msg) {
+    $("loginInfo").textContent = info;
+    $("loginForm").hidden = false;
+    $("loginMsg").textContent = msg || "";
+    $("pw").focus();
+  }
+
+  async function startLogin() {
+    try {
+      const a = await call("teacherAutoLogin");
+      if (a.ok) return await tryLoad("");
+      const saved = session.get();
+      if (saved) { try { return await tryLoad(saved); } catch (e) {} }
+      if (a.hasPassword) showLoginForm("교사 비밀번호를 입력하세요.");
+      else showLoginForm("이 스크립트를 만든 구글 계정으로 로그인하면 자동으로 들어가집니다.",
+        "다른 계정·기기에서 쓰려면 Apps Script 편집기의\n프로젝트 설정 → 스크립트 속성에\nTEACHER_PASSWORD 를 추가해 비밀번호를 정하세요.");
+    } catch (e) {
+      showLoginForm("교사 확인을 하지 못했습니다.", String(e && e.message || e));
+    }
+  }
+
+  $("loginForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const pw = $("pw").value;
+    if (!pw) return;
+    $("loginMsg").textContent = "확인 중…";
+    try { await tryLoad(pw); }
+    catch (e) { $("loginMsg").textContent = /AUTH/.test(e && e.message) ? "비밀번호가 맞지 않습니다." : String(e && e.message || e); }
+  });
+
+  // ================= 화면 그리기 =================
+  function lastPublishedIndex() {
+    let k = -1;
+    doc.tabs.forEach((t, i) => { if (t.published) k = i; });
+    return k;
+  }
+  function isEmptyTab(t) { return !t.desc.trim() && !t.codes.some(c => c.code.trim()); }
+
+  function renderList() {
+    const list = $("tabList");
+    list.innerHTML = "";
+    doc.tabs.forEach((t, i) => {
+      const b = document.createElement("button");
+      b.className = "tab-item" + (i === sel ? " sel" : "");
+      const num = document.createElement("span"); num.className = "num"; num.textContent = i + 1;
+      const title = document.createElement("span"); title.className = "t" + (isEmptyTab(t) ? " emptytab" : "");
+      title.textContent = (t.title || "(제목 없음)") + (isEmptyTab(t) ? " · 비어 있음" : "");
+      const pill = document.createElement("span"); pill.className = "pill " + (t.published ? "on" : "off");
+      pill.textContent = t.published ? "공개" : "숨김";
+      b.append(num, title, pill);
+      b.addEventListener("click", () => { sel = i; renderAll(); });
+      list.appendChild(b);
+    });
+    const pub = doc.tabs.filter(t => t.published).length;
+    $("summary").textContent = `학생에게 공개 ${pub}개 / 전체 ${doc.tabs.length}개`;
+    $("addTabBtn").disabled = doc.tabs.length >= MAX_TABS;
+    const nextIdx = doc.tabs.findIndex((t, i) => i > lastPublishedIndex() && !t.published);
+    $("nextPubBtn").disabled = nextIdx < 0;
+    $("nextPubBtn").textContent = nextIdx < 0 ? "▶ 다음 탭 공개" : `▶ ${nextIdx + 1}번 탭 공개`;
+  }
+
+  function renderPub() {
+    const t = doc.tabs[sel];
+    const b = $("pubBtn");
+    b.classList.toggle("on", t.published);
+    b.textContent = t.published ? "🔓 공개 중 (누르면 숨김)" : "🔒 숨김 (누르면 학생에게 공개)";
+    $("pubNote").textContent = t.published ? "학생 화면에 보이고 있습니다. 고치면 자동 저장 후 학생 화면에도 바로 반영됩니다." : "학생에게는 보이지 않습니다. 미리 코드를 넣어 두세요.";
+  }
+
+  function renderEditor() {
+    const t = doc.tabs[sel];
+    $("courseTitle").value = doc.title || "";
+    $("tabTitle").value = t.title;
+    $("tabDesc").value = t.desc;
+    renderPub();
+    const box = $("codes");
+    box.innerHTML = "";
+    t.codes.forEach((c, k) => box.appendChild(makeCodeBlock(c, k)));
+    if (!t.codes.length) {
+      const tip = document.createElement("div");
+      tip.className = "tip"; tip.style.marginTop = "10px";
+      tip.textContent = "아직 코드가 없습니다. [＋ 코드 블록 추가]를 누르세요.";
+      box.appendChild(tip);
+    }
+    $("upBtn").disabled = sel === 0;
+    $("downBtn").disabled = sel === doc.tabs.length - 1;
+    $("insertBtn").disabled = doc.tabs.length >= MAX_TABS;
+    $("delBtn").disabled = doc.tabs.length <= 1;
+  }
+
+  function renderAll() { renderList(); renderEditor(); }
+
+  function makeCodeBlock(c, k) {
+    const wrap = document.createElement("div");
+    wrap.className = "code-block";
+    const top = document.createElement("div");
+    top.className = "code-top";
+    const name = document.createElement("input");
+    name.type = "text"; name.placeholder = "파일 이름 (예: list.py)"; name.maxLength = 60; name.value = c.name;
+    name.addEventListener("input", () => { c.name = name.value; changed(); });
+    const lang = document.createElement("select");
+    LANGS.forEach(([v, label]) => { const o = document.createElement("option"); o.value = v; o.textContent = label; lang.appendChild(o); });
+    lang.value = c.lang;
+    lang.addEventListener("change", () => { c.lang = lang.value; changed(); });
+    const del = document.createElement("button");
+    del.className = "danger"; del.textContent = "블록 삭제";
+    del.addEventListener("click", () => {
+      if (c.code.trim() && !confirm("이 코드 블록을 지울까요?")) return;
+      doc.tabs[sel].codes.splice(k, 1); changed(); renderAll();
+    });
+    top.append(name, lang, del);
+    const ta = document.createElement("textarea");
+    ta.className = "code"; ta.spellcheck = false; ta.value = c.code;
+    ta.setAttribute("autocapitalize", "off"); ta.setAttribute("autocomplete", "off");
+    ta.placeholder = "여기에 코드를 붙여넣으세요";
+    ta.addEventListener("input", () => { c.code = ta.value; changed(true); });
+    ta.addEventListener("keydown", e => indentKey(e, ta));
+    wrap.append(top, ta);
+    return wrap;
+  }
+
+  // Tab = 4칸 들여쓰기, Shift+Tab = 내어쓰기
+  function indentKey(e, ta) {
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+    if (!e.shiftKey && s === en) {
+      ta.setRangeText("    ", s, en, "end");
+    } else {
+      const blockEnd = en > s && v[en - 1] === "\n" ? en - 1 : en;
+      const lines = v.slice(lineStart, blockEnd).split("\n");
+      const out = lines.map(l => e.shiftKey ? l.replace(/^( {1,4}|\t)/, "") : "    " + l).join("\n");
+      ta.setRangeText(out, lineStart, blockEnd, "select");
+    }
+    ta.dispatchEvent(new Event("input"));
+  }
+
+  // ================= 편집 이벤트 =================
+  $("courseTitle").addEventListener("input", e => { doc.title = e.target.value; changed(); });
+  $("tabTitle").addEventListener("input", e => { doc.tabs[sel].title = e.target.value; changed(); renderList(); });
+  $("tabDesc").addEventListener("input", e => { doc.tabs[sel].desc = e.target.value; changed(true); });
+
+  $("pubBtn").addEventListener("click", () => {
+    const t = doc.tabs[sel];
+    t.published = !t.published;
+    if (t.published && isEmptyTab(t)) toast("주의: 비어 있는 탭을 공개했습니다");
+    else toast(t.published ? `"${t.title}" 공개 — 학생 화면에 곧 나타납니다` : `"${t.title}" 숨김`);
+    renderAll(); saveNow();
+  });
+
+  $("nextPubBtn").addEventListener("click", () => {
+    const i = doc.tabs.findIndex((t, k) => k > lastPublishedIndex() && !t.published);
+    if (i < 0) return toast("더 공개할 탭이 없습니다");
+    doc.tabs[i].published = true;
+    sel = i;
+    toast(`"${doc.tabs[i].title}" 공개 — 학생 화면에 곧 나타납니다`);
+    renderAll(); saveNow();
+  });
+
+  $("addCodeBtn").addEventListener("click", () => {
+    const t = doc.tabs[sel];
+    if (t.codes.length >= 10) return toast("코드 블록은 한 탭에 10개까지입니다");
+    const prev = t.codes[t.codes.length - 1];
+    t.codes.push({ name: "", lang: prev ? prev.lang : "python", code: "" });
+    changed(); renderEditor();
+    const tas = document.querySelectorAll("textarea.code");
+    if (tas.length) tas[tas.length - 1].focus();
+  });
+
+  function newTab() {
+    return { id: "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: (doc.tabs.length + 1) + "단계", published: false, desc: "", codes: [] };
+  }
+  $("addTabBtn").addEventListener("click", () => {
+    if (doc.tabs.length >= MAX_TABS) return;
+    doc.tabs.push(newTab()); sel = doc.tabs.length - 1; changed(); renderAll();
+  });
+  $("insertBtn").addEventListener("click", () => {
+    if (doc.tabs.length >= MAX_TABS) return;
+    doc.tabs.splice(sel + 1, 0, newTab()); sel++; changed(); renderAll();
+  });
+  $("delBtn").addEventListener("click", () => {
+    const t = doc.tabs[sel];
+    if (doc.tabs.length <= 1) return;
+    if (!confirm(`"${t.title}" 탭을 삭제할까요?` + (t.published ? "\n(학생 화면에서도 사라집니다)" : ""))) return;
+    doc.tabs.splice(sel, 1); sel = Math.min(sel, doc.tabs.length - 1); changed(); renderAll(); saveNow();
+  });
+  function move(d) {
+    const j = sel + d;
+    if (j < 0 || j >= doc.tabs.length) return;
+    [doc.tabs[sel], doc.tabs[j]] = [doc.tabs[j], doc.tabs[sel]];
+    sel = j; changed(); renderAll();
+  }
+  $("upBtn").addEventListener("click", () => move(-1));
+  $("downBtn").addEventListener("click", () => move(1));
+
+  $("studentBtn").addEventListener("click", () => window.open(studentUrl, "_blank"));
+
+  // ================= 저장 =================
+  let dirty = false, saving = false, again = false, timer = null, listTimer = null;
+  function setStatus(text, cls) { const s = $("status"); s.textContent = text; s.className = "status" + (cls ? " " + cls : ""); }
+
+  function changed(refreshListLater) {
+    dirty = true;
+    setStatus("저장 안 됨…", "dirty");
+    clearTimeout(timer);
+    timer = setTimeout(saveNow, AUTOSAVE_MS);
+    if (refreshListLater) { clearTimeout(listTimer); listTimer = setTimeout(renderList, 600); }
+  }
+
+  async function saveNow() {
+    clearTimeout(timer);
+    if (saving) { again = true; return; }
+    saving = true; again = false; dirty = false;
+    setStatus("저장 중…");
+    try {
+      const snapshot = JSON.parse(JSON.stringify({ title: doc.title, tabs: doc.tabs }));
+      const res = await call("teacherSave", password, snapshot, version);
+      version = res.version;
+      if (!dirty) setStatus("저장됨 ✓ " + new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
+    } catch (e) {
+      dirty = true;
+      const m = String(e && e.message || e);
+      if (/CONFLICT/.test(m)) {
+        setStatus("저장 실패", "err");
+        if (confirm("다른 창(또는 기기)에서 먼저 저장한 내용이 있습니다.\n[확인]을 누르면 최신 내용을 다시 불러옵니다. (이 창에서 고친 내용은 사라집니다)")) {
+          dirty = false; location.reload();
+        }
+      } else if (/AUTH/.test(m)) {
+        setStatus("저장 실패", "err");
+        alert("교사 확인이 풀렸습니다. 새로고침 후 다시 로그인해 주세요.");
+      } else {
+        setStatus("저장 실패 — 다시 시도 중", "err");
+        timer = setTimeout(saveNow, 5000);
+        toast(m.replace(/^\w+:\s*/, ""), 4000);
+      }
+    } finally {
+      saving = false;
+      if (again) saveNow();
+    }
+  }
+  $("saveBtn").addEventListener("click", saveNow);
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (doc) saveNow(); }
+    if (e.key === "Escape") $("moreModal").classList.remove("open");
+  });
+  window.addEventListener("beforeunload", e => { if (dirty || saving) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ================= 관리 (숨기기 / 백업) =================
+  $("moreBtn").addEventListener("click", () => {
+    $("backupText").value = JSON.stringify({ title: doc.title, tabs: doc.tabs }, null, 1);
+    $("moreModal").classList.add("open");
+  });
+  $("moreClose").addEventListener("click", () => $("moreModal").classList.remove("open"));
+  $("moreModal").addEventListener("click", e => { if (e.target === $("moreModal")) $("moreModal").classList.remove("open"); });
+  $("hideAllBtn").addEventListener("click", () => {
+    if (!confirm("모든 탭을 학생에게서 숨길까요? (코드는 지워지지 않습니다)")) return;
+    doc.tabs.forEach(t => (t.published = false));
+    renderAll(); saveNow(); toast("모든 탭을 숨겼습니다");
+    $("moreModal").classList.remove("open");
+  });
+  $("showAllBtn").addEventListener("click", () => {
+    if (!confirm("모든 탭을 학생에게 공개할까요?")) return;
+    doc.tabs.forEach(t => (t.published = true));
+    renderAll(); saveNow(); toast("모든 탭을 공개했습니다");
+    $("moreModal").classList.remove("open");
+  });
+  $("copyBackupBtn").addEventListener("click", async () => {
+    const ta = $("backupText");
+    try { await navigator.clipboard.writeText(ta.value); }
+    catch (e) { ta.select(); try { document.execCommand("copy"); } catch (_) {} }
+    toast("백업 내용을 복사했습니다");
+  });
+  $("restoreBtn").addEventListener("click", () => {
+    let d;
+    try { d = JSON.parse($("backupText").value); } catch (e) { return alert("백업 형식이 올바르지 않습니다."); }
+    if (!d || !Array.isArray(d.tabs) || !d.tabs.length) return alert("백업에 탭이 없습니다.");
+    if (!confirm(`탭 ${d.tabs.length}개로 지금 내용을 모두 바꿀까요?`)) return;
+    doc.title = String(d.title || doc.title);
+    doc.tabs = d.tabs.slice(0, MAX_TABS).map((t, i) => ({
+      id: String(t.id || ("r" + Date.now() + i)), title: String(t.title || (i + 1) + "단계"), published: t.published === true,
+      desc: String(t.desc || ""), codes: (Array.isArray(t.codes) ? t.codes : []).map(c => ({ name: String(c.name || ""), lang: String(c.lang || "python"), code: String(c.code || "") }))
+    }));
+    sel = 0; renderAll(); saveNow(); toast("복원했습니다");
+    $("moreModal").classList.remove("open");
+  });
+
+  startLogin();
+</script>
+</body>
+</html>

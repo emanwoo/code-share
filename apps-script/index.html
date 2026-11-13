@@ -185,100 +185,31 @@
     .copy-btn { font-size: 16px; padding: 6px 14px; }
   }
 </style>
+<style>
+  .empty {
+    text-align: center; color: var(--muted); padding: 60px 16px;
+    font-size: calc(var(--fs) * 0.9);
+  }
+  .empty b { display: block; font-size: calc(var(--fs) * 1.1); color: var(--text); margin-bottom: 8px; }
+  .panel .desc { white-space: pre-wrap; margin: 0 0 14px; }
+  nav.tabs button.fresh::after {
+    content: "NEW"; margin-left: 6px; font-size: 11px; font-weight: 700;
+    background: var(--ok); color: var(--ok-text); border-radius: 6px; padding: 1px 5px; vertical-align: 2px;
+  }
+  .live {
+    font-size: 13px; color: var(--muted); white-space: nowrap;
+  }
+  .live::before { content: "●"; color: var(--ok); margin-right: 4px; }
+  .live.off::before { color: var(--muted); }
+</style>
 </head>
 <body>
-
-<!--
-  ================================================================
-  ✏️ 선생님용 편집 안내
-  ----------------------------------------------------------------
-  1) 아래 <div id="lessons"> 안의 <section> 하나가 탭 하나입니다.
-     - data-title="..." 에 탭 이름을 적습니다.
-  2) 설명은 <p>...</p> 로 자유롭게 적습니다.
-  3) 코드는 아래 형식으로 넣습니다. (한 탭에 여러 개 가능)
-       <script type="text/x-code" data-lang="python" data-name="파일이름.py">
-       ...코드...
-       </script>
-     - 코드 안의 < > & 기호도 그대로 써도 됩니다 (변환 불필요).
-     - 블록 전체가 들여쓰기 되어 있어도 공통 들여쓰기는 자동으로 제거됩니다.
-       → 학생이 복사하면 첫 줄부터 정확한 들여쓰기로 붙여넣어집니다.
-     - data-lang: python, c, java, javascript, html 등 (생략 시 python)
-  4) 제목은 아래 COURSE_TITLE 을 바꾸세요.
-  ================================================================
--->
-<div id="lessons" hidden>
-
-  <section data-title="1. 출력과 변수">
-    <p>코드를 <b>복사하기</b> 버튼으로 복사한 뒤, 내 편집기에 붙여넣고 실행해 보세요.</p>
-    <script type="text/x-code" data-lang="python" data-name="hello.py">
-    name = "홍길동"
-    age = 17
-    print("안녕하세요!", name, "입니다.")
-    print(f"나이는 {age}살 입니다.")
-    </script>
-  </section>
-
-  <section data-title="2. 입력과 조건문">
-    <p>점수를 입력받아 학점을 출력합니다. 들여쓰기(4칸)를 잘 살펴보세요.</p>
-    <script type="text/x-code" data-lang="python" data-name="grade.py">
-    score = int(input("점수를 입력하세요: "))
-
-    if score >= 90:
-        grade = "A"
-    elif score >= 80:
-        grade = "B"
-    elif score >= 70:
-        grade = "C"
-    else:
-        grade = "F"
-
-    print("학점:", grade)
-    </script>
-  </section>
-
-  <section data-title="3. 반복문">
-    <p>먼저 구구단 한 단을 출력해 봅시다.</p>
-    <script type="text/x-code" data-lang="python" data-name="loop1.py">
-    dan = 3
-    for i in range(1, 10):
-        print(f"{dan} x {i} = {dan * i}")
-    </script>
-    <p>이번에는 중첩 반복문으로 2단부터 9단까지 출력합니다.</p>
-    <script type="text/x-code" data-lang="python" data-name="loop2.py">
-    for dan in range(2, 10):
-        print(f"--- {dan}단 ---")
-        for i in range(1, 10):
-            if i % 2 == 0:
-                continue  # 짝수 줄은 건너뛰기
-            print(f"{dan} x {i} = {dan * i}")
-    </script>
-  </section>
-
-  <section data-title="4. 함수">
-    <p>리스트의 평균을 구하는 함수를 만들어 봅시다.</p>
-    <script type="text/x-code" data-lang="python" data-name="func.py">
-    def average(numbers):
-        """리스트의 평균을 돌려줍니다."""
-        if len(numbers) == 0:
-            return 0
-        total = 0
-        for n in numbers:
-            total += n
-        return total / len(numbers)
-
-
-    scores = [85, 92, 78, 64, 99]
-    print("평균:", average(scores))
-    print("최고점:", max(scores), "/ 최저점:", min(scores))
-    </script>
-  </section>
-
-</div>
 
 <header>
   <div class="topbar">
     <h1 id="courseTitle">정보 수업 코드</h1>
     <div class="tools">
+      <span class="live" id="live" title="선생님이 코드를 공개하면 자동으로 나타납니다">자동 업데이트</span>
       <button id="sizeDown" title="글자 작게 ( - 키 )">가−</button>
       <button id="sizeReset" class="size-label" title="클릭하면 기본 크기로">22px</button>
       <button id="sizeUp" title="글자 크게 ( + 키 )">가+</button>
@@ -305,40 +236,24 @@
   </div>
 </div>
 
-<div class="toast" id="toast">복사되었습니다! 붙여넣기 하세요 (Ctrl+V)</div>
+<div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-  const COURSE_TITLE = "정보 수업 코드";   // ← 수업 제목
+  // 수업 내용은 교사 화면(주소 끝에 ?mode=teacher)에서 고칩니다. 이 파일은 고칠 필요가 없습니다.
+  const APP_URL = <?= appUrl ?>;
+  const INITIAL = <?!= initialJson ?>;
   const DEFAULT_SIZE = 22;                  // 기본 글자 크기(px)
   const MIN_SIZE = 14, MAX_SIZE = 48;
-  // 학생 접속 주소(QR 코드)는 배포된 웹 앱 주소를 자동으로 가져옵니다.
+  const POLL_MS = 15000;                    // 새 탭 확인 간격 (15초)
   const GS = (window.google && google.script) ? google.script : null;
-  let shareUrl = "";
-  if (GS && GS.run) {
-    GS.run.withSuccessHandler(u => { if (u) shareUrl = u; }).getUrl();
-  }
 
   // ---------- 저장(실패해도 동작) ----------
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   };
-
-  // ---------- 공통 들여쓰기 제거 ----------
-  function dedent(text) {
-    let lines = text.replace(/\r\n?/g, "\n").split("\n");
-    while (lines.length && lines[0].trim() === "") lines.shift();
-    while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
-    let min = Infinity;
-    for (const l of lines) {
-      if (l.trim() === "") continue;
-      min = Math.min(min, l.match(/^[ \t]*/)[0].length);
-    }
-    if (min === Infinity) min = 0;
-    return lines.map(l => (l.trim() === "" ? "" : l.slice(min).replace(/\s+$/, ""))).join("\n");
-  }
 
   // ---------- 복사 ----------
   async function copyText(text) {
@@ -361,19 +276,25 @@
 
   const toast = document.getElementById("toast");
   let toastTimer;
-  function showToast(msg) {
+  function showToast(msg, ms) {
     toast.textContent = msg;
     toast.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), ms || 1800);
   }
 
-  // ---------- 코드 카드 만들기 ----------
-  function makeCodeCard(scriptEl) {
-    const code = dedent(scriptEl.textContent);
-    const lang = scriptEl.dataset.lang || "python";
-    const name = scriptEl.dataset.name || lang;
+  // 코드 끝의 빈 줄, 줄 끝 공백 정리 (들여쓰기는 그대로)
+  function tidy(code) {
+    const lines = String(code || "").replace(/\r\n?/g, "\n").split("\n").map(l => l.replace(/\s+$/, ""));
+    while (lines.length && lines[0] === "") lines.shift();
+    while (lines.length && lines[lines.length - 1] === "") lines.pop();
+    return lines.join("\n");
+  }
 
+  // ---------- 코드 카드 ----------
+  function makeCodeCard(c) {
+    const code = tidy(c.code);
+    const lang = c.lang || "python";
     const card = document.createElement("div");
     card.className = "code-card";
 
@@ -381,7 +302,7 @@
     head.className = "code-head";
     const label = document.createElement("span");
     label.className = "code-name";
-    label.textContent = name;
+    label.textContent = c.name || lang;
     const btn = document.createElement("button");
     btn.className = "copy-btn";
     btn.textContent = "📋 복사하기";
@@ -410,55 +331,109 @@
     codeEl.textContent = code;
     pre.appendChild(codeEl);
     body.append(gutter, pre);
-
-    if (window.hljs) {
-      try { hljs.highlightElement(codeEl); } catch (e) {}
-    }
+    if (window.hljs) { try { hljs.highlightElement(codeEl); } catch (e) {} }
 
     card.append(head, body);
     return card;
   }
 
-  // ---------- 탭 구성 ----------
-  document.title = COURSE_TITLE;
-  document.getElementById("courseTitle").textContent = COURSE_TITLE;
-
-  const tabsEl = document.getElementById("tabs");
-  const mainEl = document.getElementById("main");
-  const sections = [...document.querySelectorAll("#lessons > section")];
-  const tabs = [], panels = [];
-
-  sections.forEach((sec, i) => {
-    const title = sec.dataset.title || `${i + 1}단계`;
-
-    const tab = document.createElement("button");
-    tab.setAttribute("role", "tab");
-    tab.id = "tab-" + i;
-    tab.textContent = title;
-    tab.addEventListener("click", () => show(i));
-    tabsEl.appendChild(tab);
-    tabs.push(tab);
-
+  function makePanel(t) {
     const panel = document.createElement("section");
     panel.className = "panel";
     panel.setAttribute("role", "tabpanel");
-    panel.setAttribute("aria-labelledby", tab.id);
     const h2 = document.createElement("h2");
-    h2.textContent = title;
+    h2.textContent = t.title;
     panel.appendChild(h2);
-    while (sec.firstChild) panel.appendChild(sec.firstChild);
-    panel.querySelectorAll('script[type="text/x-code"]').forEach(s => s.replaceWith(makeCodeCard(s)));
-    panel.hidden = true;
-    mainEl.appendChild(panel);
-    panels.push(panel);
-  });
-  document.getElementById("lessons").remove();
+    if (t.desc) {
+      const p = document.createElement("p");
+      p.className = "desc";
+      p.textContent = t.desc;
+      panel.appendChild(p);
+    }
+    (t.codes || []).forEach(c => panel.appendChild(makeCodeCard(c)));
+    return panel;
+  }
 
+  // ---------- 탭 그리기 ----------
+  const tabsEl = document.getElementById("tabs");
+  const mainEl = document.getElementById("main");
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
+  let data = { title: "", version: "", tabs: [] };
+  let tabs = [], panels = [];
   let current = 0;
+  const seen = new Set(JSON.parse(store.get("codeShare.seen", "[]") || "[]"));
+  const firstLoad = seen.size === 0;
 
-  function show(i, fromHash) {
+  function sig(t) { return JSON.stringify([t.title, t.desc, t.codes]); }
+
+  function render(newData, initial) {
+    const oldTabs = data.tabs;
+    const oldSig = {};
+    oldTabs.forEach(t => (oldSig[t.id] = sig(t)));
+    const curId = oldTabs[current] && oldTabs[current].id;
+    const wasAtEnd = current >= oldTabs.length - 1;
+
+    data = newData;
+    const title = data.title || "정보 수업 코드";
+    document.getElementById("courseTitle").textContent = title;
+    document.title = title;
+
+    tabsEl.innerHTML = "";
+    mainEl.innerHTML = "";
+    tabs = []; panels = [];
+
+    if (!data.tabs.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      const b = document.createElement("b");
+      b.textContent = "아직 공개된 코드가 없습니다";
+      empty.append(b, "선생님이 코드를 공개하면 이 화면에 자동으로 나타납니다.");
+      mainEl.appendChild(empty);
+      prevBtn.disabled = nextBtn.disabled = true;
+      prevBtn.textContent = "← 이전"; nextBtn.textContent = "다음 →";
+      return { added: [], changedCurrent: false };
+    }
+
+    data.tabs.forEach((t, i) => {
+      const tab = document.createElement("button");
+      tab.setAttribute("role", "tab");
+      tab.id = "tab-" + i;
+      tab.textContent = t.title;
+      if (!firstLoad && !seen.has(t.id)) tab.classList.add("fresh");
+      tab.addEventListener("click", () => show(i));
+      tabsEl.appendChild(tab);
+      tabs.push(tab);
+      const panel = makePanel(t);
+      panel.setAttribute("aria-labelledby", tab.id);
+      panel.hidden = true;
+      mainEl.appendChild(panel);
+      panels.push(panel);
+    });
+
+    if (initial) return { added: [], changedCurrent: false };
+    const added = data.tabs.filter(t => !(t.id in oldSig));
+    const curNow = data.tabs.find(t => t.id === curId);
+    const changedCurrent = !!(curNow && oldSig[curId] !== sig(curNow));
+
+    let target = data.tabs.findIndex(t => t.id === curId);
+    if (added.length && wasAtEnd) target = data.tabs.findIndex(t => t.id === added[added.length - 1].id);
+    if (target < 0) target = Math.min(current, data.tabs.length - 1);
+    show(target, false, target === current && !!curNow);
+    return { added, changedCurrent };
+  }
+
+  function markSeen(i) {
+    const t = data.tabs[i];
+    if (!t) return;
+    if (tabs[i]) tabs[i].classList.remove("fresh");
+    if (!seen.has(t.id)) {
+      seen.add(t.id);
+      store.set("codeShare.seen", JSON.stringify([...seen]));
+    }
+  }
+
+  function show(i, fromHash, keepScroll) {
     if (!panels.length) return;
     i = Math.max(0, Math.min(panels.length - 1, i));
     current = i;
@@ -467,29 +442,53 @@
     tabs[i].scrollIntoView({ block: "nearest", inline: "nearest" });
     prevBtn.disabled = i === 0;
     nextBtn.disabled = i === panels.length - 1;
-    prevBtn.textContent = i > 0 ? "← " + tabs[i - 1].textContent : "← 이전";
-    nextBtn.textContent = i < panels.length - 1 ? tabs[i + 1].textContent + " →" : "다음 →";
+    prevBtn.textContent = i > 0 ? "← " + data.tabs[i - 1].title : "← 이전";
+    nextBtn.textContent = i < panels.length - 1 ? data.tabs[i + 1].title + " →" : "다음 →";
+    markSeen(i);
     if (!fromHash) {
-      // 주소창 끝에 #번호 를 붙여 둡니다 (예: .../exec#3 → 3번 탭)
       try {
         if (GS && GS.history) GS.history.replace(null, null, String(i + 1));
         else history.replaceState(null, "", "#" + (i + 1));
       } catch (e) {}
     }
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
   }
 
   function indexFrom(hash) {
     const n = parseInt(String(hash || "").replace("#", ""), 10);
-    return Number.isFinite(n) ? n - 1 : 0;
+    return Number.isFinite(n) ? n - 1 : -1;
   }
   if (GS && GS.history) {
-    try { GS.history.setChangeHandler(e => show(indexFrom(e.location && e.location.hash), true)); } catch (e) {}
+    try { GS.history.setChangeHandler(e => { const n = indexFrom(e.location && e.location.hash); if (n >= 0) show(n, true); }); } catch (e) {}
   } else {
-    window.addEventListener("hashchange", () => show(indexFrom(location.hash), true));
+    window.addEventListener("hashchange", () => { const n = indexFrom(location.hash); if (n >= 0) show(n, true); });
   }
   prevBtn.addEventListener("click", () => show(current - 1));
   nextBtn.addEventListener("click", () => show(current + 1));
+
+  // ---------- 자동 업데이트 ----------
+  const live = document.getElementById("live");
+  let polling = false, failCount = 0;
+  function poll() {
+    if (!GS || !GS.run || polling || document.hidden) return;
+    polling = true;
+    GS.run
+      .withSuccessHandler(res => {
+        polling = false; failCount = 0;
+        live.classList.remove("off"); live.textContent = "자동 업데이트";
+        if (!res || res.same) return;
+        const r = render(res);
+        if (r.added.length) showToast("새 코드가 공개되었습니다: " + r.added.map(t => t.title).join(", "), 3500);
+        else if (r.changedCurrent) showToast("선생님이 이 탭의 코드를 수정했습니다", 3000);
+      })
+      .withFailureHandler(() => {
+        polling = false; failCount++;
+        if (failCount >= 2) { live.classList.add("off"); live.textContent = "연결 끊김"; }
+      })
+      .getPublicLessons(data.version);
+  }
+  setInterval(poll, POLL_MS + Math.floor(Math.random() * 4000));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
 
   // ---------- 글자 크기 ----------
   const sizeLabel = document.getElementById("sizeReset");
@@ -527,10 +526,10 @@
   // ---------- QR ----------
   const qrModal = document.getElementById("qrModal");
   document.getElementById("qrBtn").addEventListener("click", () => {
-    const url = shareUrl || (GS ? "" : location.href.split("#")[0]);
+    const url = APP_URL || location.href.split("#")[0];
     const box = document.getElementById("qr");
     box.innerHTML = "";
-    document.getElementById("qrUrl").textContent = url || "주소를 불러오는 중입니다. 잠시 후 다시 눌러 주세요.";
+    document.getElementById("qrUrl").textContent = url;
     if (url && window.QRCode) {
       try { new QRCode(box, { text: url, width: 360, height: 360 }); } catch (e) {}
     }
@@ -550,12 +549,16 @@
     else if (e.key === "Escape") qrModal.classList.remove("open");
   });
 
+  // ---------- 시작 ----------
   setSize(size);
+  render(INITIAL || { title: "", version: "", tabs: [] }, true);
+  // 처음 열 때는 가장 마지막에 공개된 탭을 보여 줍니다 (주소에 #번호가 있으면 그 탭)
+  show(Math.max(0, data.tabs.length - 1), true);
   if (GS && GS.url) {
-    show(0, true);
-    try { GS.url.getLocation(loc => show(indexFrom(loc && loc.hash), true)); } catch (e) {}
+    try { GS.url.getLocation(loc => { const n = indexFrom(loc && loc.hash); if (n >= 0) show(n, true); }); } catch (e) {}
   } else {
-    show(indexFrom(location.hash));
+    const n = indexFrom(location.hash);
+    if (n >= 0) show(n, true);
   }
 </script>
 </body>
